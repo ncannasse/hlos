@@ -76,4 +76,7 @@ void *sys_alloc_align( int size, int align );
 void sys_free_align( void *ptr, int size );
 double hl_nan();
 
+void libc_panic( const char *file, const char *fun, int line );
+#define PANIC() libc_panic(__FILE__,__func__,__LINE__)
+
 #endif

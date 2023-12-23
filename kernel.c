@@ -63,6 +63,14 @@ void kprint_char( char c ) {
 			kprint_char(' ');
 		return;
 	}
+	if( vga_cursor == VGA_COLS * VGA_ROWS ) {
+		// scroll line
+		int i;
+		memcpy(VGA_MEM,VGA_MEM + VGA_COLS*2, (VGA_COLS * (VGA_ROWS - 1)) * 2);
+		for(i=0;i<VGA_COLS;i++)
+			VGA_MEM[((VGA_ROWS - 1) * VGA_COLS + i) * 2] = ' ';
+		vga_cursor -= VGA_COLS;
+	}
 	VGA_MEM[(vga_cursor++) << 1] = c;
 	set_cursor(vga_cursor);
 }
@@ -103,7 +111,7 @@ int hl_main() {
 	int code_size = HL_CODE_ADDR[1];
 	hl_global_init();
 	hl_register_thread(&ctx);
-	ctx.code = hl_code_read(HL_CODE_ADDR + 2, code_size, &error_msg);
+	ctx.code = hl_code_read((unsigned char*)(HL_CODE_ADDR + 2), code_size, &error_msg);
 	if( ctx.code == NULL ) {
 		if( error_msg ) kerror(error_msg);
 		return 1;

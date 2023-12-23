@@ -4,14 +4,11 @@ extern void kpanic( const char *msg );
 extern void kprint( const char *msg );
 extern void kprint_char( char c );
 
-void libc_panic( const char *fun, int line ) {
-	/*char buf[256];
-	sprintf(buf, "*** LIBC PANIC %s:%d ***", fun, line);
-	kpanic(buf);*/
-	kpanic(fun);
+void libc_panic( const char *file, const char *fun, int line ) {
+	char buf[256];
+	sprintf(buf, "LIBC ERROR %s(%s:%d)", fun, file, line);
+	kpanic(buf);
 }
-
-#define PANIC() libc_panic(__func__,__LINE__)
 
 static char *MALLOC_START_ADDR = (char*)0x00010000;
 
@@ -25,11 +22,11 @@ void free( void *ptr ) {
 	// TODO
 }
 
-void memcpy(void *s1, const void *s2, size_t n) {
-	unsigned char *_s1 = (unsigned char *)s1;
-	unsigned char *_s2 = (unsigned char *)s2;
+void memcpy(void *dst, const void *src, size_t n) {
+	unsigned char *_dst = (unsigned char *)dst;
+	unsigned char *_src = (unsigned char *)src;
 	while( n-- )
-		*_s1++ = *_s2++;
+		*_dst++ = *_src++;
 }
 
 void memset(void *s, int c, size_t n) {
@@ -39,8 +36,15 @@ void memset(void *s, int c, size_t n) {
 		*_s++ = cc;
 }
 
-void memmove(void *s1, const void *s2, size_t n) {
-	PANIC();
+void memmove(void *dst, const void *src, size_t n) {
+	if( dst < src )
+		memcpy(dst, src, n);
+	else {
+		unsigned char *_dst = (unsigned char *)dst;
+		unsigned char *_src = (unsigned char *)src;
+		while( n-- )
+			_dst[n] = _src[n];
+	}
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
@@ -123,6 +127,25 @@ sprintf_loop:
 								int n = (i / digits) % 10;
 								*out++ = '0' + n;
 								digits /= 10;
+							}
+						}
+						goto sprintf_loop;
+					case 'X':
+						{
+							int i = va_arg(args, int);
+							int digits = 1;
+							if( i < 0 ) {
+								*out++ = '-';
+								i = -i;
+							}
+							while( (i>>(4*digits)) > 0xF && digits < 8 ) digits++;
+							while( digits > 0 ) {
+								int n = (i >> (digits * 4)) & 15;
+								if( n < 10 )
+									*out++ = '0' + n;
+								else
+									*out++ = 'A' + n - 10;
+								digits--;
 							}
 						}
 						goto sprintf_loop;
