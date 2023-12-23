@@ -13,21 +13,30 @@ void libc_panic( const char *fun, int line ) {
 
 #define PANIC() libc_panic(__func__,__LINE__)
 
+static char *MALLOC_START_ADDR = (char*)0x00010000;
+
 void *malloc(size_t size) {
-	PANIC();
-	return NULL;
+	char *ptr = MALLOC_START_ADDR;
+	MALLOC_START_ADDR += size;
+	return ptr;
 }
 
 void free( void *ptr ) {
-	PANIC();
+	// TODO
 }
 
 void memcpy(void *s1, const void *s2, size_t n) {
-	PANIC();
+	unsigned char *_s1 = (unsigned char *)s1;
+	unsigned char *_s2 = (unsigned char *)s2;
+	while( n-- )
+		*_s1++ = *_s2++;
 }
 
 void memset(void *s, int c, size_t n) {
-	PANIC();
+	unsigned char *_s = (unsigned char *)s;
+	unsigned char cc = (unsigned char)c;
+	while( n-- )
+		*_s++ = cc;
 }
 
 void memmove(void *s1, const void *s2, size_t n) {
@@ -109,10 +118,11 @@ sprintf_loop:
 								*out++ = '-';
 								i = -i;
 							}
-							while( i >= digits * 10 && digits < 7 ) digits++;
-							while( digits-- ) {
-								int n = digits == 0 ? i % 10 : (i / (digits * 10)) % 10;
+							while( (i/10) >= digits && digits < 1000000000 ) digits *= 10;
+							while( digits > 0 ) {
+								int n = (i / digits) % 10;
 								*out++ = '0' + n;
+								digits /= 10;
 							}
 						}
 						goto sprintf_loop;

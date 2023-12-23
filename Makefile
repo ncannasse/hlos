@@ -1,6 +1,6 @@
 CC=i686-elf-tools-windows/bin/i686-elf-gcc.exe
 LD=i686-elf-tools-windows/bin/i686-elf-ld.exe
-CFLAGS = -Wall -Wno-unused-function -ffreestanding -m32 -Iempty -DHL_CONSOLE -DHL_NO_THREADS -I$(HASHLINK_SRC)/src
+CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_CONSOLE -DHL_NO_THREADS -I$(HASHLINK_SRC)/src
 
 RUNTIME = out/gc.o out/code.o out/module.o out/jit.o
 
@@ -13,11 +13,14 @@ all: boot
 boot:
 	nasm -fbin boot.asm -o out/boot.bin
 
-kernel: hl
+kernel: hl haxe
 	$(CC) $(CFLAGS) -c kernel.c -o out/kernel.o
 	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
 	nasm kernel_main.asm -f elf -o out/kernel_main.o
 	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD) --oformat binary
+
+haxe:
+	haxe -hl out/app.hl -main App -dce full
 
 hl:
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/gc.c -o out/gc.o

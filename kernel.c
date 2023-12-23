@@ -1,7 +1,6 @@
 #include <hlmodule.h>
 
-#define HL_CODE_ADDR 0x1000
-#define HL_CODE_SIZE 0
+static unsigned int *HL_CODE_ADDR = (unsigned int *)0x48000;
 
 static unsigned char port_byte_in(unsigned short port) {
     unsigned char result;
@@ -73,6 +72,12 @@ void kprint( const char *str ) {
 		kprint_char(*str++);
 }
 
+void kerror( const char *str ) {
+	kprint("**** KERNEL ERROR (");
+	kprint(str);
+	kprint(") ***\n");
+}
+
 void kpanic( const char *str ) {
 	kprint("*** KERNEL PANIC (");
 	kprint(str);
@@ -93,17 +98,17 @@ int hl_main() {
 	main_context ctx;
 	bool isExc = false;
 	char *error_msg = NULL;
-	/*
+	if( *HL_CODE_ADDR != 0xBAD0CAFE )
+		kpanic("Invalid code start");
+	int code_size = HL_CODE_ADDR[1];
 	hl_global_init();
 	hl_register_thread(&ctx);
-	ctx.code = hl_code_read((unsigned char*)HL_CODE_ADDR, HL_CODE_SIZE, &error_msg);
+	ctx.code = hl_code_read(HL_CODE_ADDR + 2, code_size, &error_msg);
 	if( ctx.code == NULL ) {
-		if( error_msg ) {
-			kernel_print(error_msg);
-			kernel_print("\n");
-		}
+		if( error_msg ) kerror(error_msg);
 		return 1;
 	}
+	/*
 	ctx.m = hl_module_alloc(ctx.code);
 	if( ctx.m == NULL )
 		return 2;
@@ -124,8 +129,9 @@ int hl_main() {
 		return 1;
 	}
 	hl_module_free(ctx.m);
+	*/
 	hl_free(&ctx.code->alloc);
-	hl_global_free();*/
+	hl_global_free();
 	return 0;
 }
 

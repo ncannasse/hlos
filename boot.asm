@@ -1,8 +1,13 @@
 [org 0x7c00]
 [bits 16]
 
-STACK_POSITION equ 0x0500
+; boot memory layout
+
+STACK_POSITION  equ 0x0500
 KERNEL_POSITION equ 0x8000
+KERNEL_SIZE		equ 0x40000 ; 256K
+HL_CODE_SIZE	equ 0x20000 ; 128K
+HLCODE_POSITION equ (KERNEL_POSITION + KERNEL_SIZE)
 
 ; ------------- BOOT ----------------
 
@@ -40,35 +45,38 @@ bios_print_nl:
     popa
     ret
 
-debug:
-	push bx
-	mov bx, DEBUG_TXT
-	call bios_print
-	call bios_print_nl
-	pop bx
-	ret
-
 disk_load:
 		pusha
 
-		mov cl, 2 ; start from sector 2 after our boot
-		mov dh, 0 ; head
+		mov bx, 0
+		mov cl, 2 ; start sector (1 = boot load, 2+ = data)
 		mov ch, 0 ; cylinder
+		mov dh, 0 ; head
 
   	loop:
+		cmp si, 0
+		je read
+		sub si, 1
+		jmp skip
 
+	read:
 		push ax
 		mov ah, 0x02 ; 'read'
 		mov al, 0x01 ; number of sectors
+		mov es, di
 		int 0x13     ; read data into [es:bx]
 		jc disk_error
 		cmp al, 0x01   ; result
 		jne disk_error
 		pop ax
 
+		add di, 32 ; 512 bytes in extended mode
+
 		sub ax, 1
 		cmp ax, 0
 		je end
+
+	skip:
 		add cl, 1
 		cmp cl, 37
 		jne next
@@ -79,10 +87,6 @@ disk_load:
 		mov dh, 0
 		add ch, 1
 	next:
-		mov bx, es
-		add bx, 32 ; 512 bytes in extended mode
-		mov es, bx
-		mov bx, 0
 		jmp loop
 	disk_error:
 		mov bx, DISC_ERROR_MSG
@@ -124,11 +128,13 @@ DATA_SEG equ gdt_data - gdt_start
 
 [bits 16]
 load_kernel:
-	mov ax, KERNEL_POSITION
-	shr ax, 4
-	mov es, ax
-	mov bx, 0
-	mov ax, 960 ; that's the maximum of sectors than can fit in our 0x8000 - 0x80000 BIOS memory section
+	mov di, (KERNEL_POSITION / 16)
+	mov si, (HL_CODE_SIZE / 512)
+	mov ax, (KERNEL_SIZE / 512)
+	call disk_load
+	mov di, (HLCODE_POSITION / 16)
+	mov si, 0
+	mov ax, (HL_CODE_SIZE / 512)
 	call disk_load
 	ret
 
@@ -156,24 +162,18 @@ init_protected_mode:
 ; ------------- DATA ----------------
 
 WELCOME_MSG:
-	db 'Starting HL-OS...', 0
-
-DEBUG_TXT:
-	db '#D#', 0
-
-DL_SECTOR:
-	db 0
-DL_CYLINDER:
-	db 0
-DL_HEAD
-	db 0
+	db 'HL-OS Boot...', 0
 
 DISC_ERROR_MSG:
 	db '*** DISC ERROR ***', 0
 
-DISC_ERROR_MSG2:
-	db '*** DISC ERROR (2) ***', 0
-
 ; padding and magic number
 times 510 - ($-$$) db 0
 dw 0xaa55
+
+; ---------- HL DATA ------------
+
+dd 0xBAD0CAFE
+dd HL_CODE_SIZE
+incbin 'out/app.hl'
+times (HL_CODE_SIZE + 512) - ($-$$) db 0xFF
