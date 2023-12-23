@@ -1,6 +1,7 @@
 CC=i686-elf-tools-windows/bin/i686-elf-gcc.exe
 LD=i686-elf-tools-windows/bin/i686-elf-ld.exe
-CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_CONSOLE -DHL_NO_THREADS -I$(HASHLINK_SRC)/src
+CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_CONSOLE -DHL_NO_THREADS -DLIBHL_EXPORTS -I$(HASHLINK_SRC)/src
+OBJDUMP=i686-elf-tools-windows/bin/i686-elf-objdump.exe
 
 RUNTIME = out/gc.o out/code.o out/module.o out/jit.o
 
@@ -18,6 +19,7 @@ kernel: hl haxe
 	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
 	nasm kernel_main.asm -f elf -o out/kernel_main.o
 	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD) --oformat binary
+	$(LD) -o out/kernel.elf -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD)
 
 haxe:
 	haxe -hl out/app.hl -main App -dce full
@@ -41,7 +43,10 @@ hl:
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/std/types.c -o out/types.o
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/std/ucs2.c -o out/ucs2.o
 
-image: boot kernel
+symbols:
+	OBJDUMP=$(OBJDUMP) haxe --run ElfExtract out/kernel.elf out/kernel.sym
+
+image: kernel symbols boot
 	cat out/boot.bin out/kernel.bin >image.bin
 
 run:

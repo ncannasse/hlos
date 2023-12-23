@@ -6,6 +6,7 @@
 STACK_POSITION  equ 0x0500
 KERNEL_POSITION equ 0x8000
 KERNEL_SIZE		equ 0x40000 ; 256K
+KERNEL_SYM_SIZE equ 0x3000
 HL_CODE_SIZE	equ 0x20000 ; 128K
 HLCODE_POSITION equ (KERNEL_POSITION + KERNEL_SIZE)
 
@@ -129,12 +130,12 @@ DATA_SEG equ gdt_data - gdt_start
 [bits 16]
 load_kernel:
 	mov di, (KERNEL_POSITION / 16)
-	mov si, (HL_CODE_SIZE / 512)
+	mov si, ((HL_CODE_SIZE + KERNEL_SYM_SIZE) / 512)
 	mov ax, (KERNEL_SIZE / 512)
 	call disk_load
 	mov di, (HLCODE_POSITION / 16)
 	mov si, 0
-	mov ax, (HL_CODE_SIZE / 512)
+	mov ax, ((HL_CODE_SIZE + KERNEL_SYM_SIZE) / 512)
 	call disk_load
 	ret
 
@@ -175,5 +176,10 @@ dw 0xaa55
 
 dd 0xBAD0CAFE
 dd HL_CODE_SIZE
+dd KERNEL_SYM_SIZE
 incbin 'out/app.hl'
 times (HL_CODE_SIZE + 512) - ($-$$) db 0xFF
+
+incbin 'out/kernel.sym'
+times (KERNEL_SYM_SIZE + HL_CODE_SIZE + 512) - ($-$$) db 0xFF
+

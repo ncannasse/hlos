@@ -101,6 +101,8 @@ typedef struct {
 	int file_time;
 } main_context;
 
+void init_kernel_symbols( char *symbols, int symb_size );
+
 int hl_main() {
 	static vclosure cl;
 	main_context ctx;
@@ -109,14 +111,15 @@ int hl_main() {
 	if( *HL_CODE_ADDR != 0xBAD0CAFE )
 		kpanic("Invalid code start");
 	int code_size = HL_CODE_ADDR[1];
+	int symb_size = HL_CODE_ADDR[2];
+	init_kernel_symbols((char*)HL_CODE_ADDR+code_size, symb_size);
 	hl_global_init();
 	hl_register_thread(&ctx);
-	ctx.code = hl_code_read((unsigned char*)(HL_CODE_ADDR + 2), code_size, &error_msg);
+	ctx.code = hl_code_read((unsigned char*)(HL_CODE_ADDR + 3), code_size, &error_msg);
 	if( ctx.code == NULL ) {
 		if( error_msg ) kerror(error_msg);
 		return 1;
 	}
-	/*
 	ctx.m = hl_module_alloc(ctx.code);
 	if( ctx.m == NULL )
 		return 2;
@@ -137,7 +140,6 @@ int hl_main() {
 		return 1;
 	}
 	hl_module_free(ctx.m);
-	*/
 	hl_free(&ctx.code->alloc);
 	hl_global_free();
 	return 0;

@@ -1,4 +1,4 @@
-#include "libc.h"
+#include <hl.h>
 
 extern void kpanic( const char *msg );
 extern void kprint( const char *msg );
@@ -10,7 +10,7 @@ void libc_panic( const char *file, const char *fun, int line ) {
 	kpanic(buf);
 }
 
-static char *MALLOC_START_ADDR = (char*)0x00010000;
+static char *MALLOC_START_ADDR = (char*)0x01000000;
 
 void *malloc(size_t size) {
 	char *ptr = MALLOC_START_ADDR;
@@ -48,14 +48,28 @@ void memmove(void *dst, const void *src, size_t n) {
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
-	PANIC();
+	unsigned char *_s1 = (unsigned char *)s1;
+	unsigned char *_s2 = (unsigned char *)s2;
+	while( n ) {
+		int d = *_s1 - *_s2;
+		if( d != 0 ) return d;
+		_s1++;
+		_s2++;
+		n--;
+	}
 	return 0;
 }
 
 // string
 
 int strcmp(const char *s1, const char *s2) {
-	PANIC();
+	while(true) {
+		int d = *s1 - *s2;
+		if( d != 0 ) return d;
+		if( *s1 == 0 ) break;
+		s1++;
+		s2++;
+	}
 	return 0;
 }
 
@@ -65,12 +79,14 @@ char *strchr(const char *s, int c) {
 }
 
 int strlen(const char *s) {
-	PANIC();
-	return 0;
+	int len = 0;
+	while( *s++ ) len++;
+	return len;
 }
 
 void strcpy(char *dest, const char *src) {
-	PANIC();
+	while( *src )
+		*dest++ = *src++;
 }
 
 int printf(const char *format, ...) {
@@ -211,7 +227,8 @@ int gettimeofday( struct timeval *v, void *timezone ) {
 // other
 
 void exit( int code ) {
-	PANIC();
+	printf("**** EXIT with code %d ****\n", code);
+	while( true ) {}
 }
 
 void *dlopen( const char *path, void *mode ) {
@@ -219,9 +236,30 @@ void *dlopen( const char *path, void *mode ) {
 	return NULL;
 }
 
-void *dlsym( void *handler, const char *symbol ) {
+static void error_func() {
 	PANIC();
-	return NULL;
+}
+
+static char *SYMBOLS = NULL;
+static int SYMBOLS_SIZE = 0;
+
+void init_kernel_symbols( char *symbols, int symb_size ) {
+	const char *header = "SYM_TBL_BEGIN";
+	if( memcmp(symbols,header,strlen(header)) != 0 )
+		kpanic("Invalid symbol table");
+	SYMBOLS = symbols;
+	SYMBOLS_SIZE = symb_size;
+}
+
+extern int hl_bytes_find( const char *where, int pos, int len, const char *which, int wpos, int wlen );
+
+void *dlsym( void *handler, const char *symbol ) {
+	int len = strlen(symbol);
+	int pos = hl_bytes_find(SYMBOLS, 0, SYMBOLS_SIZE, symbol, 0, len);
+	if( pos < 0 )
+		return NULL;
+	int addr = *(int*)(SYMBOLS + pos + len);
+	return (void*)addr;
 }
 
 int setjmp( jmp_buf env ) {
@@ -241,4 +279,20 @@ void *sys_alloc_align( int size, int align ) {
 void sys_free_align( void *ptr, int size ) {
 	PANIC();
 }
+
+bool hl_sys_utf8_path() {
+	return true;
+}
+
+void hl_sys_print( vbyte *msg ) {
+	uprintf(USTR("%s"),(uchar*)msg);
+}
+
+bool hl_sys_is64() {
+	return false;
+}
+
+DEFINE_PRIM(_BOOL, sys_utf8_path, _NO_ARG);
+DEFINE_PRIM(_VOID, sys_print, _BYTES);
+DEFINE_PRIM(_BOOL, sys_is64, _NO_ARG);
 
