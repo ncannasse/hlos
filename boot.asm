@@ -145,20 +145,58 @@ enter_protected_mode:
 	mov eax, cr0
 	or eax, 1
 	mov cr0, eax
-	jmp CODE_SEG:init_protected_mode
+	jmp CODE_SEG:init_kernel
 
 [bits 32]
-init_protected_mode:
-	mov ax, DATA_SEG
-	mov ds, ax
-	mov ss, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ebp, 0x90000
-	mov esp, ebp
-	call KERNEL_POSITION
-	jmp $
+
+vga_print:
+		pusha
+    	mov edx, 0xB8000
+	vga_loop:
+    	mov al, [ebx] ; [ebx] is the address of our character
+    	mov ah, 0xF
+    	cmp al, 0
+	    je vga_done
+    	mov [edx], ax
+	    add ebx, 1
+	    add edx, 2
+    	jmp vga_loop
+	vga_done:
+    	popa
+    	ret
+
+init_kernel:
+
+		; setup data
+		mov ax, DATA_SEG
+		mov ds, ax
+		mov ss, ax
+		mov es, ax
+		mov fs, ax
+		mov gs, ax
+		mov ebp, 0x90000
+		mov esp, ebp
+
+		; enable SSE2
+
+		mov eax, 0x1
+		cpuid
+		test edx, 1<<26
+		jnz sse_enable
+		mov eax, NO_SSE2_ERROR
+		call vga_print
+		jmp $
+	sse_enable:
+		mov eax, cr0
+		and ax, 0xFFFB
+		or ax, 0x2
+		mov cr0, eax
+		mov eax, cr4
+		or ax, 3 << 9
+		mov cr4, eax
+
+		call KERNEL_POSITION
+		jmp $
 
 ; ------------- DATA ----------------
 
@@ -167,6 +205,9 @@ WELCOME_MSG:
 
 DISC_ERROR_MSG:
 	db '*** DISC ERROR ***', 0
+
+NO_SSE2_ERROR:
+	db '*** NO SSE2 ON THIS CPU ***', 0
 
 ; padding and magic number
 times 510 - ($-$$) db 0

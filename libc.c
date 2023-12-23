@@ -156,6 +156,40 @@ sprintf_loop:
 							}
 						}
 						goto sprintf_loop;
+					case 'g':
+						{
+							double d = va_arg(args, double);
+							int digits = 0;
+							if( d < 0 ) {
+								*out++ = '-';
+								d = -d;
+							}
+							while( d >= 1 ) {
+								d *= 0.1;
+								digits++;
+							}
+							if( digits == 0 )
+								*out++ = '0';
+							while( digits > 0 ) {
+								d *= 10;
+								int n = (int)d;
+								*out++ = '0' + n;
+								d -= n;
+								digits--;
+							}
+							if( d > 0 ) {
+								*out++ = '.';
+								// this is approximate but gives good results
+								while( d > 1e-7 && digits < 15 ) {
+									d *= 10;
+									int n = (int)d;
+									*out++ = '0' + n;
+									d -= n;
+									digits++;
+								}
+							}
+						}
+						goto sprintf_loop;
 					case 'X':
 						{
 							int i = va_arg(args, int);
@@ -175,8 +209,20 @@ sprintf_loop:
 							}
 						}
 						goto sprintf_loop;
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+					case '.':
+						continue;
 					default:
-						kprint(fmt);
+						kprint(start);
 						PANIC();
 						break;
 					}
@@ -192,18 +238,49 @@ sprintf_loop:
 }
 
 int atoi(const char *str) {
-	PANIC();
-	return 0;
+	return strtol(str, NULL, 10);
 }
 
-double strtod(const char *str, char **end) {
-	PANIC();
-	return 0;
+double strtod( const char *str, char **endptr ) {
+	int m = 1;
+	double d = 0.;
+	double exp = 0.;
+	if( *str == '-' ) { m = -1; str++; }
+	while( true ) {
+		int c = *str++;
+		if( c == '.' ) {
+			if( exp != 0 ) break;
+			exp = 1;
+			continue;
+		}
+		if( c < '0' || c > '9' ) {
+			str--;
+			break;
+		}
+		exp *= 10;
+		d = d*10 + c - '0';
+	}
+	if( exp == 0 ) exp = 1;
+	if( endptr ) *endptr = (char*)str;
+	d = (d / exp) * m;
+	return d;
 }
 
-long int strtol (const char* str, char** endptr, int base) {
-	PANIC();
-	return 0;
+long int strtol( const char* str, char** endptr, int base ) {
+	if( base != 10 ) PANIC();
+	int i = 0;
+	int m = 1;
+	if( *str == '-' ) { m = -1; str++; }
+	while(true) {
+		int c = *str++;
+		if( c < '0' || c > '9' ) {
+			str--;
+			break;
+		}
+		i = i*10 + c - '0';
+	}
+	if( endptr ) *endptr = (char*)str;
+	return i * m;
 }
 
 // math
@@ -243,12 +320,7 @@ void exit( int code ) {
 }
 
 void *dlopen( const char *path, void *mode ) {
-	PANIC();
 	return NULL;
-}
-
-static void error_func() {
-	PANIC();
 }
 
 static char *SYMBOLS = NULL;
