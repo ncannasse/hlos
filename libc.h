@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 typedef int intptr_t;
 typedef unsigned int uintptr_t;
 typedef unsigned short char16_t;

@@ -17,7 +17,7 @@ kernel: hl
 	$(CC) $(CFLAGS) -c kernel.c -o out/kernel.o
 	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
 	nasm kernel_main.asm -f elf -o out/kernel_main.o
-	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o --oformat binary
+	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD) --oformat binary
 
 hl:
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/gc.c -o out/gc.o

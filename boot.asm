@@ -40,38 +40,58 @@ bios_print_nl:
     popa
     ret
 
+debug:
+	push bx
+	mov bx, DEBUG_TXT
+	call bios_print
+	call bios_print_nl
+	pop bx
+	ret
+
 disk_load:
-    pusha
-    push dx
-    mov ah, 0x02 ; ah <- int 0x13 function. 0x02 = 'read'
-    mov al, dh   ; al <- number of sectors to read (0x01 .. 0x80)
-    mov cl, 0x02 ; cl <- sector (0x01 .. 0x11)
-                 ; 0x01 is our boot sector, 0x02 is the first 'available' sector
-    mov ch, 0x00 ; ch <- cylinder (0x0 .. 0x3FF, upper 2 bits in 'cl')
-    ; dl <- drive number. Our caller sets it as a parameter and gets it from BIOS
-    ; (0 = floppy, 1 = floppy2, 0x80 = hdd, 0x81 = hdd2)
-    mov dh, 0x00 ; dh <- head number (0x0 .. 0xF)
-    ; [es:bx] <- pointer to buffer where the data will be stored
-    ; caller sets it up for us, and it is actually the standard location for int 13h
-    int 0x13      ; BIOS interrupt
-    jc disk_error ; if error (stored in the carry bit)
-    pop dx
-    cmp al, dh    ; BIOS also sets 'al' to the # of sectors read. Compare it.
-    jne disk_error2
-    popa
-    ret
+		pusha
 
-disk_error:
-	mov bx, DISC_ERROR_MSG
-	call bios_print
-	call bios_print_nl
-	jmp $
+		mov cl, 2 ; start from sector 2 after our boot
+		mov dh, 0 ; head
+		mov ch, 0 ; cylinder
 
-disk_error2:
-	mov bx, DISC_ERROR_MSG2
-	call bios_print
-	call bios_print_nl
-	jmp $
+  	loop:
+
+		push ax
+		mov ah, 0x02 ; 'read'
+		mov al, 0x01 ; number of sectors
+		int 0x13     ; read data into [es:bx]
+		jc disk_error
+		cmp al, 0x01   ; result
+		jne disk_error
+		pop ax
+
+		sub ax, 1
+		cmp ax, 0
+		je end
+		add cl, 1
+		cmp cl, 37
+		jne next
+		mov cl, 1
+		add dh, 1
+		cmp dh, 2
+		jne next
+		mov dh, 0
+		add ch, 1
+	next:
+		mov bx, es
+		add bx, 32 ; 512 bytes in extended mode
+		mov es, bx
+		mov bx, 0
+		jmp loop
+	disk_error:
+		mov bx, DISC_ERROR_MSG
+		call bios_print
+		call bios_print_nl
+		jmp $
+	end:
+	    popa
+    	ret
 
 ; ------------- GDT ----------------
 
@@ -108,8 +128,7 @@ load_kernel:
 	shr ax, 4
 	mov es, ax
 	mov bx, 0
-	mov dh, 64
-	mov dl, [BOOT_DRIVE]
+	mov ax, 960 ; that's the maximum of sectors than can fit in our 0x8000 - 0x80000 BIOS memory section
 	call disk_load
 	ret
 
@@ -136,11 +155,18 @@ init_protected_mode:
 
 ; ------------- DATA ----------------
 
-BOOT_DRIVE:
-	db 0
-
 WELCOME_MSG:
 	db 'Starting HL-OS...', 0
+
+DEBUG_TXT:
+	db '#D#', 0
+
+DL_SECTOR:
+	db 0
+DL_CYLINDER:
+	db 0
+DL_HEAD
+	db 0
 
 DISC_ERROR_MSG:
 	db '*** DISC ERROR ***', 0

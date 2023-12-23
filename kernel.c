@@ -58,6 +58,12 @@ void set_cursor( int position ) {
 }
 
 void kprint_char( char c ) {
+	if( c == '\n' ) {
+		kprint_char(' ');
+		while( vga_cursor % VGA_COLS != 0 )
+			kprint_char(' ');
+		return;
+	}
 	VGA_MEM[(vga_cursor++) << 1] = c;
 	set_cursor(vga_cursor);
 }
@@ -68,7 +74,9 @@ void kprint( const char *str ) {
 }
 
 void kpanic( const char *str ) {
+	kprint("*** KERNEL PANIC (");
 	kprint(str);
+	kprint(") ***");
 	while( 1 ) {
 	}
 }
@@ -124,8 +132,8 @@ int hl_main() {
 void kmain() {
 	cls();
 	set_cursor(0);
-	kprint("Start...");
-	//int ret = hl_main();
-	//printf("**** EXIT with code %d ****\n", ret);
+	kprint("Starting HLOS...\n");
+	int ret = hl_main();
+	printf("**** EXIT with code %d ****\n", ret);
 	while( true ) {}
 }

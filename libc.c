@@ -1,6 +1,8 @@
 #include "libc.h"
 
 extern void kpanic( const char *msg );
+extern void kprint( const char *msg );
+extern void kprint_char( char c );
 
 void libc_panic( const char *fun, int line ) {
 	/*char buf[256];
@@ -59,17 +61,74 @@ void strcpy(char *dest, const char *src) {
 }
 
 int printf(const char *format, ...) {
-	PANIC();
-	return 0;
+	char buf[1024];
+	int ret;
+	va_list args;
+	va_start(args, format);
+	ret = vsprintf(buf, format, args);
+	va_end(args);
+	kprint(buf);
+	return ret;
 }
 
 int sprintf(char *s, const char *format, ...) {
-	PANIC();
-	return 0;
+	int ret;
+	va_list args;
+	va_start(args, format);
+	ret = vsprintf(s, format, args);
+	va_end(args);
+	return ret;
 }
 
-int vsprintf(char *s, const char *format, va_list arg ) {
-	PANIC();
+int vsprintf(char *out, const char *fmt, va_list args ) {
+	char *start = out;
+	char c;
+	while(true) {
+sprintf_loop:
+		c = *fmt++;
+		switch( c ) {
+		case 0:
+			*out = 0;
+			return (int)(out - start);
+		case '%':
+			{
+				const char *start = fmt;
+				while( true ) {
+					c = *fmt++;
+					switch( c ) {
+					case 's':
+						char *s = va_arg(args,char *);
+						while( *s )
+							*out++ = *s++;
+						goto sprintf_loop;
+					case 'd':
+						{
+							int i = va_arg(args, int);
+							int digits = 1;
+							if( i < 0 ) {
+								*out++ = '-';
+								i = -i;
+							}
+							while( i >= digits * 10 && digits < 7 ) digits++;
+							while( digits-- ) {
+								int n = digits == 0 ? i % 10 : (i / (digits * 10)) % 10;
+								*out++ = '0' + n;
+							}
+						}
+						goto sprintf_loop;
+					default:
+						kprint(fmt);
+						PANIC();
+						break;
+					}
+				}
+			}
+			break;
+		default:
+			*out++ = c;
+			break;
+		}
+	}
 	return 0;
 }
 
