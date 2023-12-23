@@ -1,6 +1,6 @@
 CC=i686-elf-tools-windows/bin/i686-elf-gcc.exe
 LD=i686-elf-tools-windows/bin/i686-elf-ld.exe
-CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_CONSOLE -DHL_NO_THREADS -DLIBHL_EXPORTS -I$(HASHLINK_SRC)/src
+CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_OS -DHL_NO_THREADS -DLIBHL_EXPORTS -I$(HASHLINK_SRC)/src
 OBJDUMP=i686-elf-tools-windows/bin/i686-elf-objdump.exe
 
 RUNTIME = out/gc.o out/code.o out/module.o out/jit.o

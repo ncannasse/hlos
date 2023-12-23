@@ -22,6 +22,16 @@ void free( void *ptr ) {
 	// TODO
 }
 
+void *sys_alloc_align( int size, int align ) {
+	int delta = ((int)MALLOC_START_ADDR) % align;
+	if( delta ) MALLOC_START_ADDR += align - delta;
+	return malloc(size);
+}
+
+void sys_free_align( void *ptr, int size ) {
+	free(ptr);
+}
+
 void memcpy(void *dst, const void *src, size_t n) {
 	unsigned char *_dst = (unsigned char *)dst;
 	unsigned char *_src = (unsigned char *)src;
@@ -220,7 +230,8 @@ double hl_nan() {
 // time
 
 int gettimeofday( struct timeval *v, void *timezone ) {
-	PANIC();
+	v->tv_sec = 0;
+	v->tv_usec = 0;
 	return 0;
 }
 
@@ -263,20 +274,10 @@ void *dlsym( void *handler, const char *symbol ) {
 }
 
 int setjmp( jmp_buf env ) {
-	PANIC();
 	return 0;
 }
 
 void longjmp( jmp_buf env, int result ) {
-	PANIC();
-}
-
-void *sys_alloc_align( int size, int align ) {
-	PANIC();
-	return NULL;
-}
-
-void sys_free_align( void *ptr, int size ) {
 	PANIC();
 }
 
@@ -292,7 +293,18 @@ bool hl_sys_is64() {
 	return false;
 }
 
+vbyte *hl_date_to_string( int date, int *len ) {
+	PANIC();
+	return NULL;
+}
+
+int hl_date_new( int y, int mo, int d, int h, int m, int s ) {
+	PANIC();
+	return 0;
+}
+
 DEFINE_PRIM(_BOOL, sys_utf8_path, _NO_ARG);
 DEFINE_PRIM(_VOID, sys_print, _BYTES);
 DEFINE_PRIM(_BOOL, sys_is64, _NO_ARG);
-
+DEFINE_PRIM(_BYTES, date_to_string, _I32 _REF(_I32));
+DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
