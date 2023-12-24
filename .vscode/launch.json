@@ -8,7 +8,11 @@
 			"command": "make image run",
 			"name": "Run",
 			"request": "launch",
-			"type": "node-terminal"
+			"type": "node-terminal",
+			"preLaunchTask": {
+				"type" : "haxe",
+				"args" : "active configuration"
+			}
 		}
 	]
 }

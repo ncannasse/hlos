@@ -20,16 +20,76 @@ enum Value {
 	VInt( v : Int );
 }
 
+enum SimpleOp {
+	IRet;
+	Cli;
+	Sti;
+}
+
+#if !macro
+@:struct class HLClosure {
+	public var type : hl.Type;
+	public var funPtr : hl.Bytes;
+	public var hasValue : Int;
+	public var value : Dynamic;
+}
+#end
+
 class Asm {
+
+	static var CODES = [
+		IRet => 0xCF,
+		Cli => 0xFA,
+		Sti => 0xFB,
+	];
+
+	#if !macro
+	public static function getFunctionPtr(v:haxe.Constraints.Function) {
+		var c : HLClosure = hl.Api.unsafeCast(v);
+		return c.funPtr.address().low;
+	}
+	#end
 
 	static var asm(get,never) : haxe.macro.Expr;
 	static function get_asm() return macro untyped $i{"$asm"};
 
-	public static macro function discard( e : Expr ) {
+	public static macro function getValuePtr( e : Expr ) {
+		return macro (hl.Api.unsafeCast($e) : hl.Bytes).address().low;
+	}
+
+	public static macro function discard( e : ExprOf<Register> ) {
 		return switch( getValue(e) ) {
 		case VReg(r): macro @:pos(e.pos) $asm(1,$v{r.getIndex()});
 		default: Context.error("Should be a CPU register", e.pos);
 		}
+	}
+
+	public static macro function push( v : Expr ) {
+		switch( getValue(v) ) {
+		case VReg(r):
+			Context.error("Not implemented", v.pos);
+		case VInt(i):
+			Context.error("Not implemented", v.pos);
+		case VExpr(e):
+			Context.error("Not implemented", v.pos);
+		}
+		return null;
+	}
+
+	public static macro function pop( v : Expr ) {
+		switch( getValue(v) ) {
+		case VReg(r):
+			return macro $asm(0,$v{0x58+r.getIndex()});
+		default:
+			Context.error("Should be a register", v.pos);
+		}
+		return null;
+	}
+
+	public static macro function emit( op : ExprOf<SimpleOp> ) {
+		var eop = getEnum(SimpleOp, op);
+		if( eop == null ) Context.error("Should be SimpleOp", op.pos);
+		return macro $asm(0,$v{CODES.get(eop)});
 	}
 
 	public static macro function set( dst : Expr, value : Expr ) {
@@ -62,26 +122,28 @@ class Asm {
 
 	public static macro function interupt( id : Int ) {
 		return macro {
-			$asm(0xCD);
-			$asm($v{id});
+			$asm(0,0xCD);
+			$asm(0,$v{id});
 		};
 	}
 
 	#if macro
 
-	static function getValue( e : haxe.macro.Expr ) {
-		switch( e.expr ) {
+	static function getEnum<T>( en : Enum<T>, e : Expr ) {
+		return switch( e.expr ) {
 		case EConst(CIdent(i)):
-			switch( i ) {
-			case "Eax": return VReg(Eax);
-			case "Ebx": return VReg(Ebx);
-			case "Ecx": return VReg(Ecx);
-			case "Edx": return VReg(Edx);
-			case "Esi": return VReg(Esi);
-			case "Edi": return VReg(Edi);
-			case "Ebp": return VReg(Ebp);
-			case "Esp": return VReg(Esp);
-			}
+			try en.createByName(i) catch( e : Dynamic ) null;
+		default:
+			null;
+		}
+	}
+
+	static function getValue( e : Expr ) {
+		switch( e.expr ) {
+		case EConst(CIdent(_)):
+			var r = getEnum(Register,e);
+			if( r != null )
+				return VReg(r);
 		case EConst(CInt(i)):
 			return VInt(Std.parseInt(i));
 		default:

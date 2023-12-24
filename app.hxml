@@ -2,4 +2,5 @@
 -main App
 -dce full
 -D hl-legacy32
+-D hl-ver=1.14.0
 -D dump
