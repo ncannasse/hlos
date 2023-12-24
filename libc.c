@@ -84,7 +84,11 @@ int strcmp(const char *s1, const char *s2) {
 }
 
 char *strchr(const char *s, int c) {
-	PANIC();
+	while( *s ) {
+		if( *s == c )
+			return (char*)s;
+		s++;
+	}
 	return NULL;
 }
 
@@ -156,8 +160,10 @@ sprintf_loop:
 							}
 						}
 						goto sprintf_loop;
+					case 'f':
 					case 'g':
 						{
+							const double EPSILON = 1e-9;
 							double d = va_arg(args, double);
 							int digits = 0;
 							if( d < 0 ) {
@@ -170,19 +176,23 @@ sprintf_loop:
 							}
 							if( digits == 0 )
 								*out++ = '0';
-							while( digits > 0 ) {
+							while( digits > 0 && d > EPSILON ) {
 								d *= 10;
-								int n = (int)d;
+								int n = (int)(d + EPSILON);
 								*out++ = '0' + n;
 								d -= n;
 								digits--;
 							}
-							if( d > 0 ) {
+							while( digits ) {
+								*out++ = '0';
+								digits--;
+							}
+							if( d > EPSILON ) {
 								*out++ = '.';
 								// this is approximate but gives good results
-								while( d > 1e-7 && digits < 15 ) {
+								while( d > EPSILON && digits < 15 ) {
 									d *= 10;
-									int n = (int)d;
+									int n = (int)(d + EPSILON);
 									*out++ = '0' + n;
 									d -= n;
 									digits++;
@@ -285,14 +295,40 @@ long int strtol( const char* str, char** endptr, int base ) {
 
 // math
 
+double trunc( double orig ) {
+	union {
+		double d;
+		struct {
+			unsigned int low;
+			unsigned int high;
+		};
+	} v;
+	v.d = orig;
+	unsigned int exp = v.high & (0x7FF << 20);
+	if( exp >= (0x3FF << 20) ) {
+		if( exp < ((0x3FF + 52) << 20) ) {
+			if( exp <= ((0x3FF + 20) << 20) ) {
+				unsigned shift = (exp >> 20) - 0x3FF;
+				v.high &= ~(0xFFFFF >> shift);
+				v.low = 0;
+			} else {
+				unsigned shift = (exp >> 20) - 0x3FF - 20;
+				v.low &= ~(((unsigned)-1) >> shift);
+			}
+		}
+	} else {
+		v.high &= 0x800 << 20;
+		v.low  = 0;
+	}
+	return v.d;
+}
+
 float fmodf( float x, float y ) {
-	PANIC();
-	return 0;
+	return x - trunc(x / y) * y;
 }
 
 double fmod( double x, double y ) {
-	PANIC();
-	return 0;
+	return x - trunc(x / y) * y;
 }
 
 #ifndef NAN
