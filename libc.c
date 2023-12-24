@@ -202,20 +202,17 @@ sprintf_loop:
 						goto sprintf_loop;
 					case 'X':
 						{
-							int i = va_arg(args, int);
-							int digits = 1;
-							if( i < 0 ) {
-								*out++ = '-';
-								i = -i;
-							}
-							while( (i>>(4*digits)) > 0xF && digits < 8 ) digits++;
+							unsigned int i = va_arg(args, unsigned int);
+							int digits = 0;
+							while( (i>>(4*digits)) != 0 && digits < 8 ) digits++;
+							if( digits == 0 ) digits++;
 							while( digits > 0 ) {
+								digits--;
 								int n = (i >> (digits * 4)) & 15;
 								if( n < 10 )
 									*out++ = '0' + n;
 								else
 									*out++ = 'A' + n - 10;
-								digits--;
 							}
 						}
 						goto sprintf_loop;
