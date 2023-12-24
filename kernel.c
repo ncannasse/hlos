@@ -150,6 +150,9 @@ void kmain() {
 	set_cursor(0);
 	kprint("Starting HLOS...\n");
 	int ret = hl_main();
-	printf("**** EXIT with code %d ****\n", ret);
+	if( ret != 0 )
+		printf("**** EXIT with code %d ****\n", ret);
+	else
+		printf("\n[KERNEL] HLOS App exit\n");
 	while( true ) {}
 }

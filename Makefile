@@ -23,7 +23,7 @@ kernel: hl haxe
 	$(LD) -o out/kernel.elf -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD)
 
 haxe:
-	haxe -hl out/app.hl -main App -dce full
+	haxe app.hxml
 
 hl:
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/gc.c -o out/gc.o

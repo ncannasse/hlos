@@ -1,0 +1,5 @@
+-hl out/app.hl
+-main App
+-dce full
+-D hl-legacy32
+-D dump
