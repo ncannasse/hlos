@@ -50,7 +50,7 @@ class Asm {
 	}
 	#end
 
-	static var asm(get,never) : haxe.macro.Expr;
+	public static var asm(get,never) : haxe.macro.Expr;
 	static function get_asm() return macro untyped $i{"$asm"};
 
 	public static macro function setNakedFunction() {
@@ -122,13 +122,6 @@ class Asm {
 		default:
 			Context.error("Invalid operation "+vdst.getName().substr(1)+" := "+v.getName().substr(1), pos);
 		}
-	}
-
-	public static macro function interupt( id : Int ) {
-		return macro {
-			$asm(0,0xCD);
-			$asm(0,$v{id});
-		};
 	}
 
 	#if macro
