@@ -22,10 +22,8 @@ class Interrupts {
 	static var idt : hl.CArray<IdtEntry>;
 
 	static function handler() {
-		Asm.pop(Ebp);
-		Asm.emit(Cli);
+		Asm.setNakedFunction();
 		handleInterrupt(); // don't use local variables as this might add to ESP
-		Asm.emit(Sti);
 		Asm.emit(IRet);
 	}
 

@@ -53,6 +53,10 @@ class Asm {
 	static var asm(get,never) : haxe.macro.Expr;
 	static function get_asm() return macro untyped $i{"$asm"};
 
+	public static macro function setNakedFunction() {
+		return macro $asm(4,0);
+	}
+
 	public static macro function getValuePtr( e : Expr ) {
 		return macro (hl.Api.unsafeCast($e) : hl.Bytes).address().low;
 	}
