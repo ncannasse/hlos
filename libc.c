@@ -70,6 +70,16 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 	return 0;
 }
 
+extern int hl_bytes_find( const char *where, int pos, int len, const char *which, int wpos, int wlen );
+
+void *memfind(const void *s1, int len, const void *s2, int len2) {
+	int pos = hl_bytes_find(s1, 0, len, s2, 0, len2);
+	if( pos < 0 )
+		return NULL;
+	return (char*)s1 + pos;
+}
+
+
 // string
 
 int strcmp(const char *s1, const char *s2) {
@@ -361,20 +371,18 @@ static int SYMBOLS_SIZE = 0;
 
 void init_kernel_symbols( char *symbols, int symb_size ) {
 	const char *header = "SYM_TBL_BEGIN";
-	if( memcmp(symbols,header,strlen(header)) != 0 )
+	if( memcmp(symbols,header,strlen(header)) != 0 || ((unsigned char*)symbols)[strlen(header)] != 0xFF )
 		kpanic("Invalid symbol table");
 	SYMBOLS = symbols;
 	SYMBOLS_SIZE = symb_size;
 }
 
-extern int hl_bytes_find( const char *where, int pos, int len, const char *which, int wpos, int wlen );
-
 void *dlsym( void *handler, const char *symbol ) {
 	int len = strlen(symbol);
-	int pos = hl_bytes_find(SYMBOLS, 0, SYMBOLS_SIZE, symbol, 0, len);
-	if( pos < 0 )
+	void *loc = memfind(SYMBOLS, SYMBOLS_SIZE, symbol, len + 1);
+	if( loc == NULL )
 		return NULL;
-	int addr = *(int*)(SYMBOLS + pos + len);
+	int addr = *(int*)((char*)loc + (len + 1));
 	return (void*)addr;
 }
 

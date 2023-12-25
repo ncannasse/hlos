@@ -12,6 +12,10 @@ HLCODE_POSITION equ (KERNEL_POSITION + KERNEL_SIZE)
 
 ; ------------- BOOT ----------------
 
+xor ax, ax
+mov ds, ax
+mov es, ax
+mov ss, ax
 mov sp, STACK_POSITION
 mov bx, WELCOME_MSG
 call bios_print

@@ -12,6 +12,7 @@ function main() {
 	var r_line = ~/^([0-9A-Fa-f]+) g +F \.text[ \t]+[0-9A-Fa-f]+[ \t]+([A-Za-z0-9_]+)\r?$/;
 	var out = new haxe.io.BytesBuffer();
 	out.addString("SYM_TBL_BEGIN");
+	out.addByte(0xFF);
 	var all = [];
 	for( l in lines )
 		if( r_line.match(l) ) {
@@ -22,6 +23,7 @@ function main() {
 	all.sort(function(s1,s2) return s1.addr - s2.addr);
 	for( s in all ) {
 		out.addString(s.name);
+		out.addByte(0);
 		out.addInt32(s.addr);
 	}
 	out.addString("SYM_TBL_END");
