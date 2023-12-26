@@ -1,16 +1,32 @@
 package hlos;
 import hlos.Asm.*;
 
+#if !macro
+@:struct class Regs16 {
+	public var di : hl.UI16;
+	public var si : hl.UI16;
+	public var bp : hl.UI16;
+	public var sp : hl.UI16;
+	public var bx : hl.UI16;
+	public var dx : hl.UI16;
+	public var cx : hl.UI16;
+	public var ax : hl.UI16;
+	public var gs : hl.UI16;
+	public var fs : hl.UI16;
+	public var es : hl.UI16;
+	public var ds : hl.UI16;
+	public var eflags : hl.UI16;
+	public function new() {
+	}
+}
+#end
+
 class Bios {
 
-	public static macro function interrupt( id : Int ) {
-		return macro {
-			$asm(0,0xCD);
-			$asm(0,$v{id});
-		};
-	}
-
 	#if !macro
+
+	@:hlNative("std", "int32") public static function interrupt( id : Int, regs : Regs16 ) : Void {
+	}
 
 	public static function inb( port : Int ) {
 		var value = 0;

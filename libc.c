@@ -421,3 +421,6 @@ DEFINE_PRIM(_VOID, sys_print, _BYTES);
 DEFINE_PRIM(_BOOL, sys_is64, _NO_ARG);
 DEFINE_PRIM(_BYTES, date_to_string, _I32 _REF(_I32));
 DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
+
+extern void int32( unsigned char intnum, void *regs );
+_DEFINE_PRIM_WITH_NAME(_VOID, int32, _I32 _STRUCT, int32);

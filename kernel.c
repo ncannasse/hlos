@@ -86,6 +86,7 @@ void kprint_char( char c ) {
 }
 
 void kprint( const char *str ) {
+	vga_cursor = get_cursor(); // restore cursor (might have been changed by App)
 	while( *str )
 		kprint_char(*str++);
 }

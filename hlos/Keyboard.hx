@@ -21,6 +21,7 @@ class Keyboard {
 
 	static var SHIFT_DOWN = 0;
 
+	public static inline var K_ESCAPE = 1;
 	public static inline var K_BACK = 14;
 	public static inline var K_TAB = 15;
 	public static inline var K_SPACE = 57;

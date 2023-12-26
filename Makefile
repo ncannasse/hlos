@@ -19,8 +19,9 @@ kernel: hl haxe
 	$(CC) $(CFLAGS) -c kernel.c -o out/kernel.o
 	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
 	nasm kernel_main.asm -f elf -o out/kernel_main.o
-	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD) --oformat binary
-	$(LD) -o out/kernel.elf -Ttext 0x8000 out/kernel_main.o out/kernel.o out/libc.o $(RUNTIME) $(STD)
+	nasm int32.asm -f elf -o out/int32.o
+	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD) --oformat binary
+	$(LD) -o out/kernel.elf -Ttext 0x8000 out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD)
 
 haxe:
 	haxe app.hxml
