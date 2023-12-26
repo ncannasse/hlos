@@ -24,6 +24,8 @@ enum SimpleOp {
 	IRet;
 	Cli;
 	Sti;
+	Pusha;
+	Popa;
 }
 
 #if !macro
@@ -41,6 +43,8 @@ class Asm {
 		IRet => 0xCF,
 		Cli => 0xFA,
 		Sti => 0xFB,
+		Pusha => 0x60,
+		Popa => 0x61,
 	];
 
 	#if !macro

@@ -1,5 +1,14 @@
+import hlos.*;
+
 class App {
+
 	static function main() {
-		Sys.print("Hello world\n");
+		Keyboard.init();
+		//Keyboard.LAYOUT = Keyboard.AZERTY;
+		Sys.println("Hello");
+		//Interrupts.setIRQHandler(Timer, () -> Sys.print("."));
+		//Interrupts.setTimer(1000);
+		while( true ) {}
 	}
+
 }

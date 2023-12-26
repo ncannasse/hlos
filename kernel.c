@@ -63,6 +63,16 @@ void kprint_char( char c ) {
 			kprint_char(' ');
 		return;
 	}
+	if( c == 0x8 ) {
+		// backspace
+		if( vga_cursor > 0 ) {
+			vga_cursor--;
+			kprint_char(' ');
+			vga_cursor--;
+			set_cursor(vga_cursor);
+		}
+		return;
+	}
 	if( vga_cursor == VGA_COLS * VGA_ROWS ) {
 		// scroll line
 		int i;
