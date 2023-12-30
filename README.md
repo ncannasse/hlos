@@ -33,7 +33,7 @@ Look at `Makefile` for more details.
 
 In order to run the HLOS image, you can use [QEmu](https://www.qemu.org/), then simply `make run`
 
-# Injecting files
+### Injecting files
 
 The kernel comes with a mini file system that allows to add and change files contained into the image without having to use any compilation. For this you can simply run `haxe --run InjectFile -path out out/kernel.elf app.hl`, this will add or replace the `app.hl` found in kernel file by the newest `out/app.hl`.
 
@@ -47,7 +47,7 @@ On windows, download [Grub 2.06](https://ftp.gnu.org/gnu/grub/grub-2.06-for-wind
 
 Once your GRUB USB is ready, simply use `make USB_DRIVE=X: install_usb` to copy the files to it.
 
-# Testing
+### Testing
 
 Testing can be done by booting QEmu directly on the usb key with `make run_usb`. This requires to run the command in adminitrator mode.
 
