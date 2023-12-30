@@ -8,13 +8,7 @@ package hlos;
 	public var highOffset : hl.UI16;
 }
 
-@:struct class IdtRegister {
-	public var length : hl.UI16;
-	public var baseLow : hl.UI16;
-	public var baseHigh : hl.UI16;
-	public function new() {
-	}
-}
+typedef IdtRegister = Kernel.GdtRegister;
 
 enum IRQ {
 	Timer;
@@ -26,6 +20,7 @@ class Interrupts {
 
 	static var reg = new IdtRegister();
 	static var idt : hl.CArray<IdtEntry>;
+
 	static var irq_callbacks : Array<Void->Void> = [];
 	static var ISR_HANDLERS = 32;
 	static var IRQ_HANDLERS = 16;
