@@ -39,6 +39,18 @@ The kernel comes with a mini file system that allows to add and change files con
 
 Please note that the kernel is compiled with a fixed amount of reserved data for files. It is defined in `kernel_main.s` and can be increased by recompiling the kernel.
 
+## Creating a bootable USB
+
+In order to create a bootable standalone USB key, you need first to install the GRUB boot loader on it.
+
+On windows, download [Grub 2.06](https://ftp.gnu.org/gnu/grub/grub-2.06-for-windows.zip) and run `grub-install.exe --force --no-floppy --target=i386-pc --boot-directory=X:\boot //./PHYSICALDRIVE#`. You need to change your drive number and physical drive number with ones that match your system (see [this tutorial](https://pendrivelinux.com/install-grub2-on-usb-from-windows/)).
+
+Once your GRUB USB is ready, simply use `make USB_DRIVE=X: install_usb` to copy the files to it.
+
+# Testing
+
+Testing can be done by booting QEmu directly on the usb key with `make run_usb`. This requires to run the command in adminitrator mode.
+
 ## Assembly progamming
 
 Starting from [this haxe commit](https://github.com/HaxeFoundation/haxe/commit/5ddfcc84f7ee27c9df14f82f27d01ddf51e92df7), you can now emit native assembly directly from Haxe using HLVM.
@@ -56,4 +68,4 @@ Please note that each HLVM local variable might currently be stored in a CPU reg
 
 ## Legacy boot loader
 
-The initial boot loader (in `boot.asm`) was responsible of loading the kernel and calling it, however it is only working with the 1.44MB Floppy emulator and does not support kernel in the ELF format.
+The initial boot loader (in `tools/boot.asm`) was responsible of loading the kernel and calling it, however it is only working with the 1.44MB Floppy emulator and does not support kernel in the ELF format.
