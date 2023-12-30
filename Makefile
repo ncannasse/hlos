@@ -45,7 +45,7 @@ kernel: haxe
 	$(CC) $(CFLAGS) -O0 -c kernel.c -o out/kernel.o
 	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
 	$(CC) $(CFLAGS) -c kernel_main.s -o out/kernel_main.o
-	nasm int32.asm -f elf -o out/int32.o
+	nasm tools/int32.asm -f elf -o out/int32.o
 	$(CC) $(CFLAGS) -T kernel_linker.ld -o out/kernel.elf -nostdlib out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD)
 	OBJDUMP=$(OBJDUMP) haxe -cp tools --run ElfExtract out/kernel.elf out/kernel.sym
 	haxe -cp tools --run InjectFile -path out out/kernel.elf kernel.sym app.hl
