@@ -2,7 +2,7 @@ CC=i686-elf-tools-windows/bin/i686-elf-gcc.exe
 LD=i686-elf-tools-windows/bin/i686-elf-ld.exe
 OBJDUMP=i686-elf-tools-windows/bin/i686-elf-objdump.exe
 
-CFLAGS = -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_OS -DHL_NO_THREADS -DLIBHL_EXPORTS -I$(HASHLINK_SRC)/src
+CFLAGS = -O2 -Wall -Wno-unused-function -Wno-unused-variable -ffreestanding -m32 -Iempty -DHL_OS -DHL_NO_THREADS -DLIBHL_EXPORTS -I$(HASHLINK_SRC)/src
 
 RUNTIME = out/gc.o out/code.o out/module.o out/jit.o
 
@@ -10,18 +10,7 @@ STD = out/array.o out/buffer.o out/bytes.o out/cast.o out/error.o \
 	out/fun.o out/maps.o out/obj.o out/random.o \
 	out/string.o out/thread.o out/types.o out/ucs2.o
 
-all: boot
-
-boot:
-	nasm -fbin boot.asm -o out/boot.bin
-
-kernel: hl haxe
-	$(CC) $(CFLAGS) -c kernel.c -o out/kernel.o
-	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
-	nasm kernel_main.asm -f elf -o out/kernel_main.o
-	nasm int32.asm -f elf -o out/int32.o
-	$(LD) -o out/kernel.bin -Ttext 0x8000 out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD) --oformat binary
-	$(LD) -o out/kernel.elf -Ttext 0x8000 out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD)
+all: hl kernel
 
 haxe:
 	haxe app.hxml
@@ -45,11 +34,20 @@ hl:
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/std/types.c -o out/types.o
 	$(CC) $(CFLAGS) -c $(HASHLINK_SRC)/src/std/ucs2.c -o out/ucs2.o
 
-symbols:
+dump:
+	$(OBJDUMP) -x out/kernel.elf
+
+kernel: haxe
+	$(CC) $(CFLAGS) -O0 -c kernel.c -o out/kernel.o
+	$(CC) $(CFLAGS) -c libc.c -o out/libc.o
+	$(CC) $(CFLAGS) -c kernel_main.s -o out/kernel_main.o
+	nasm int32.asm -f elf -o out/int32.o
+	$(CC) $(CFLAGS) -T kernel_linker.ld -o out/kernel.elf -nostdlib out/kernel_main.o out/kernel.o out/int32.o out/libc.o $(RUNTIME) $(STD)
 	OBJDUMP=$(OBJDUMP) haxe --run ElfExtract out/kernel.elf out/kernel.sym
+	haxe --run InjectFile -path out out/kernel.elf kernel.sym app.hl
 
-image: kernel symbols boot
-	cat out/boot.bin out/kernel.bin >image.bin
-
+# run the kernel using qemu boot loader that is capable of loading our kernel
 run:
-	qemu-system-i386 -fda image.bin
+	qemu-system-i386 -machine type=pc-i440fx-3.1 -kernel out/kernel.elf
+
+.PHONY: dump

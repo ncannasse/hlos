@@ -1,6 +1,6 @@
 #include <hlmodule.h>
 
-static unsigned int *HL_CODE_ADDR = (unsigned int *)0x48000;
+extern const char _FILES_DATA[];
 
 static unsigned char port_byte_in(unsigned short port) {
     unsigned char result;
@@ -105,6 +105,31 @@ void kpanic( const char *str ) {
 	}
 }
 
+static int files_data_size = 0;
+const char *load_kernel_file( const char *path, int *size ) {
+	if( files_data_size == 0 ) {
+		if( memcmp(_FILES_DATA, "KFILES_BEGIN", 12) != 0 )
+			kpanic("Invalid files data section");
+		files_data_size = *(int*)(_FILES_DATA + 12);
+		if( *(int*)(_FILES_DATA + files_data_size - 4) != 0xBAD0CAFE )
+			kpanic("Invalid files data ending");
+	}
+	const char *pos = _FILES_DATA + 16;
+	int len = strlen(path) + 1;
+	while( true ) {
+		if( *pos == 0 )
+			return NULL;
+		if( memcmp(pos, path, len) == 0 ) {
+			*size = *(int*)(pos + len);
+			return pos + len + 4;
+		}
+		pos += strlen(pos) + 1;
+		pos += *(int*)pos + 4;
+	}
+	return NULL;
+}
+
+
 typedef struct {
 	hl_code *code;
 	hl_module *m;
@@ -112,21 +137,18 @@ typedef struct {
 	int file_time;
 } main_context;
 
-void init_kernel_symbols( char *symbols, int symb_size );
-
 int hl_main() {
 	static vclosure cl;
 	main_context ctx;
 	bool isExc = false;
 	char *error_msg = NULL;
-	if( *HL_CODE_ADDR != 0xBAD0CAFE )
-		kpanic("Invalid code start");
-	int code_size = HL_CODE_ADDR[1];
-	int symb_size = HL_CODE_ADDR[2];
-	init_kernel_symbols((char*)HL_CODE_ADDR+code_size, symb_size);
+	int code_size;
+	const char *hl_code = load_kernel_file("app.hl", &code_size);
+	if( hl_code == NULL )
+		kpanic("Missing app.hl file");
 	hl_global_init();
 	hl_register_thread(&ctx);
-	ctx.code = hl_code_read((unsigned char*)(HL_CODE_ADDR + 3), code_size, &error_msg);
+	ctx.code = hl_code_read((unsigned char*)hl_code, code_size, &error_msg);
 	if( ctx.code == NULL ) {
 		if( error_msg ) kerror(error_msg);
 		return 1;

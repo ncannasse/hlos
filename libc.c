@@ -338,13 +338,12 @@ double fmod( double x, double y ) {
 	return x - trunc(x / y) * y;
 }
 
-#ifndef NAN
-    static const unsigned long __nan[2] = {0xffffffff, 0x7fffffff};
-    #define NAN (*(const float *) __nan)
-#endif
-
 double hl_nan() {
-	return NAN;
+    static const union {
+		unsigned long __nan[2];
+		float fnan;
+	} NAN = {{0xffffffff, 0x7fffffff}};
+	return NAN.fnan;
 }
 
 // time
@@ -366,18 +365,19 @@ void *dlopen( const char *path, void *mode ) {
 	return NULL;
 }
 
-static char *SYMBOLS = NULL;
+const char *load_kernel_file( const char *path, int *size );
+
+static const char *SYMBOLS = NULL;
 static int SYMBOLS_SIZE = 0;
 
-void init_kernel_symbols( char *symbols, int symb_size ) {
-	const char *header = "SYM_TBL_BEGIN";
-	if( memcmp(symbols,header,strlen(header)) != 0 || ((unsigned char*)symbols)[strlen(header)] != 0xFF )
-		kpanic("Invalid symbol table");
-	SYMBOLS = symbols;
-	SYMBOLS_SIZE = symb_size;
+static void init_kernel_symbols() {
+	SYMBOLS = load_kernel_file("kernel.sym", &SYMBOLS_SIZE);
+	if( SYMBOLS == NULL ) kpanic("Symbols file not found");
 }
 
 void *dlsym( void *handler, const char *symbol ) {
+	if( SYMBOLS == NULL )
+		init_kernel_symbols();
 	int len = strlen(symbol);
 	void *loc = memfind(SYMBOLS, SYMBOLS_SIZE, symbol, len + 1);
 	if( loc == NULL )
@@ -424,3 +424,4 @@ DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
 
 extern void int32( unsigned char intnum, void *regs );
 _DEFINE_PRIM_WITH_NAME(_VOID, int32, _I32 _STRUCT, int32);
+_DEFINE_PRIM_WITH_NAME(_BYTES, load_kernel_file, _BYTES _REF(_I32), load_kernel_file);

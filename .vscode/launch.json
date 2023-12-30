@@ -5,7 +5,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"command": "make image run",
+			"command": "make kernel run",
 			"name": "Run",
 			"request": "launch",
 			"type": "node-terminal",
