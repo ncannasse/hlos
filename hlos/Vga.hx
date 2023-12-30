@@ -56,4 +56,23 @@ class Vga {
 		VGA_GFXMEM.setUI8(x+y*WIDTH, color);
 	}
 
+	public static function getPixel( x : Int, y : Int ) {
+		return VGA_GFXMEM.getUI8(x+y*WIDTH);
+	}
+
+	public static function setPalette( index : Int, color : Int ) {
+		Bios.outb(0x3C8, index);
+		Bios.outb(0x3C9, (((color >> 16) & 0xFF) + 3) >> 2);
+		Bios.outb(0x3C9, (((color >> 8) & 0xFF) + 3) >> 2);
+		Bios.outb(0x3C9, ((color & 0xFF) + 3) >> 2);
+	}
+
+	public static function getPalette( index : Int ) {
+		Bios.outb(0x3C7, index);
+		var r = Bios.inb(0x3C9);
+		var g = Bios.inb(0x3C9);
+		var b = Bios.inb(0x3C9);
+		return (r << 18) | (g << 10) | (b << 2);
+	}
+
 }
