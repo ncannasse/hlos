@@ -10,9 +10,10 @@ package hlos;
 
 typedef IdtRegister = Kernel.GdtRegister;
 
-enum IRQ {
-	Timer;
-	Keyboard;
+enum abstract IRQ(Int) from Int to Int {
+	var Timer = 0;
+	var Keyboard = 1;
+	var Mouse = 12;
 }
 
 @:build(hlos.Macros.duplicateFunctions())
@@ -46,8 +47,6 @@ class Interrupts {
 		"Machine Check",
 	];
 
-	static var IRQ_NAMES = IRQ.getConstructors();
-
 	@:dup(48) static function handler__ID__() {
 		Asm.setNakedFunction();
 		Asm.emit(Pusha);
@@ -67,14 +66,17 @@ class Interrupts {
 			if( irq_callbacks[irq] != null )
 				irq_callbacks[irq]();
 			else
-				Sys.println('*** IRQ [${IRQ_NAMES[irq] ?? "#"+irq}] ***');
+				Sys.println('*** IRQ [#$irq] ***');
 		} else {
 			Sys.println('*** INTERUPT [${NAMES[int] ?? "#"+int}] ***');
 		}
 	}
 
 	public static function setIRQHandler( irq : IRQ, callb : Void -> Void ) {
-		irq_callbacks[irq.getIndex()] = callb;
+		installHandlers();
+		var prev = irq_callbacks[irq];
+		irq_callbacks[irq] = callb;
+		return prev;
 	}
 
 	public static function setTimer( freq : Int ) {
@@ -89,6 +91,7 @@ class Interrupts {
 	public static function installHandlers() {
 		if( INSTALLED ) return;
 		INSTALLED = true;
+		Kernel.installGDT();
 
 		var count = 256;
 		idt = hl.CArray.alloc(IdtEntry,count);
@@ -120,7 +123,7 @@ class Interrupts {
 		Bios.outb(0x21, 0x0);
 		Bios.outb(0xA1, 0x0);
 
-		if( irq_callbacks[Timer.getIndex()] == null )
+		if( irq_callbacks[Timer] == null )
 			setIRQHandler(Timer, function() {}); // ignore default timer
 
 		// enable interrupts

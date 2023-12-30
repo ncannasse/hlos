@@ -30,8 +30,11 @@ class Kernel {
 
 	static var reg = new GdtRegister();
 	static var gdt = new GdtEntry();
+	static var INSTALLED = false;
 
-	static function installGDT() {
+	public static function installGDT() {
+		if( INSTALLED ) return;
+		INSTALLED = true;
 		gdt.code.length = 0xFFFF;
 		gdt.data.length = 0xFFFF;
 		gdt.code.flags1 = 0x9A;
@@ -43,7 +46,6 @@ class Kernel {
 		reg.baseHigh = gaddr >>> 16;
 		reg.baseLow = gaddr & 0xFFFF;
 		setGDT();
-		return true;
 	}
 
 	static function setGDT() {
@@ -53,8 +55,6 @@ class Kernel {
 		untyped $asm(0, 0x01);
 		untyped $asm(0, 0x10);
 	}
-
-	@:keep static var _ = installGDT();
 
 	/**
 		Load a file that was added to the kernel data using `InjectFile.hx` script.
