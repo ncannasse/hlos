@@ -187,5 +187,4 @@ void kmain() {
 		printf("**** EXIT with code %d ****\n", ret);
 	else
 		printf("\n[KERNEL] HLOS App exit\n");
-	while( true ) {}
 }
