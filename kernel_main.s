@@ -31,9 +31,30 @@ stack_top:
 .type _start, @function
 _start:
 	mov $stack_top, %esp
+	call enable_sse2
 	call kmain
 	cli
 1:	hlt
 	jmp 1b
 
-.size _start, . - _start
+enable_sse2:
+	mov $1, %eax
+	cpuid
+	test $(1<<26), %edx
+	jnz sse_enable
+	push $NO_SSE2_ERROR
+	call kpanic
+sse_enable:
+	mov %cr0, %eax
+	and $0xFFFB, %ax
+	or $2, %ax
+	mov %eax, %cr0
+	mov %cr4, %eax
+	or $(3 << 9), %ax
+	mov %eax, %cr4
+	ret
+NO_SSE2_ERROR:
+	.ascii "No SSE2 Available"
+	.byte 0
+
+
