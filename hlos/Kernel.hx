@@ -92,5 +92,8 @@ class Kernel {
 		return false;
 	}
 
+	@:hlNative("std","kprint_regs") public static function printRegs() : Void {
+	}
+
 }
 

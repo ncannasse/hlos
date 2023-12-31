@@ -437,14 +437,6 @@ void *dlsym( void *handler, const char *symbol ) {
 	return (void*)addr;
 }
 
-int setjmp( jmp_buf env ) {
-	return 0;
-}
-
-void longjmp( jmp_buf env, int result ) {
-	PANIC();
-}
-
 bool hl_sys_utf8_path() {
 	return true;
 }
@@ -490,6 +482,8 @@ DEFINE_PRIM(_BYTES, date_to_string, _I32 _REF(_I32));
 DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
 
 extern void int32( unsigned char intnum, void *regs );
+extern void kprint_regs();
 _DEFINE_PRIM_WITH_NAME(_VOID, int32, _I32 _STRUCT, int32);
 _DEFINE_PRIM_WITH_NAME(_BYTES, load_kernel_file, _BYTES _REF(_I32), load_kernel_file);
+_DEFINE_PRIM_WITH_NAME(_VOID, kprint_regs, _NO_ARG, kprint_regs);
 DEFINE_PRIM(_BOOL, define_function, _BYTES _BYTES _DYN);

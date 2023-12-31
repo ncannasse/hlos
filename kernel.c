@@ -178,6 +178,14 @@ int hl_main() {
 	return 0;
 }
 
+extern void kprint_regs();
+void __print_regs( int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax, int eip ) {
+	printf("------- REGS ------\n");
+	printf("EAX=%X EBX=%X ECX=%X EDX=%X\n", eax, ebx, ecx, edx);
+	printf("ESI=%X EDI=%X ESP=%X EBP=%X\n", esi, edi, esp, ebp);
+	printf("EIP=%X\n", eip);
+}
+
 void kmain() {
 	cls();
 	set_cursor(0);

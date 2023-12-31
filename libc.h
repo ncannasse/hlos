@@ -64,12 +64,23 @@ int gettimeofday( struct timeval *v, void *timezone ); // for random init
 void *dlopen( const char *path, void *mode );
 void *dlsym( void *handler, const char *symbol );
 
-typedef struct {
-	void *regs[5];
-} jmp_buf;
+struct jmp_buf_tag {
+	void *edx;
+	void *ebx;
+	void *esp;
+	void *ebp;
+	void *esi;
+	void *edi;
+	void *mxcsr;
+	void *fcw;
+	double xmm[8];
+	void *eip;
+};
 
-int setjmp( jmp_buf env );
-void longjmp( jmp_buf env, int result );
+typedef struct jmp_buf_tag jmp_buf[1];
+
+int setjmp( jmp_buf __env );
+[[noreturn]] void longjmp( jmp_buf env, int result );
 void exit( int i );
 
 // hl wrappers
