@@ -13,6 +13,10 @@ void libc_panic( const char *file, const char *fun, int line ) {
 static char *MALLOC_START_ADDR = (char*)0x01000000;
 
 void *malloc(size_t size) {
+	if( size >= 4 ) {
+		int r = ((int)MALLOC_START_ADDR)&3;
+		if( r != 0 ) MALLOC_START_ADDR += 4 - r;
+	}
 	char *ptr = MALLOC_START_ADDR;
 	MALLOC_START_ADDR += size;
 	return ptr;
@@ -300,6 +304,14 @@ long int strtol( const char* str, char** endptr, int base ) {
 	return i * m;
 }
 
+char *strdup( const char *s ) {
+	int len = strlen(s);
+	char *m = (char*)malloc(len + 1);
+	strcpy(m, s);
+	m[len] = 0;
+	return m;
+}
+
 // math
 
 double trunc( double orig ) {
@@ -362,7 +374,7 @@ void exit( int code ) {
 }
 
 void *dlopen( const char *path, void *mode ) {
-	return NULL;
+	return (void*)path;
 }
 
 const char *load_kernel_file( const char *path, int *size );
@@ -370,9 +382,36 @@ const char *load_kernel_file( const char *path, int *size );
 static const char *SYMBOLS = NULL;
 static int SYMBOLS_SIZE = 0;
 
+struct _unreg_function {
+	const char *lib;
+	const char *name;
+	unsigned short entry;
+	void *addr;
+	unsigned short call_asm;
+	unsigned short ret_asm;
+	struct _unreg_function *next;
+} __attribute__((packed));
+
+typedef struct _unreg_function unreg_function;
+
+static unreg_function *unregistered = NULL;
+
 static void init_kernel_symbols() {
 	SYMBOLS = load_kernel_file("kernel.sym", &SYMBOLS_SIZE);
 	if( SYMBOLS == NULL ) kpanic("Symbols file not found");
+}
+
+static void runtime_failure( unsigned char *entry /* return eip of callee */ ) {
+	unreg_function *f = NULL;
+	f = (unreg_function*)(entry - (int)&f->entry);
+	char buf[256];
+	sprintf(buf, "Primitive %s@%s is missing", f->lib, f->name);
+	kpanic(buf);
+}
+
+static void *last_unregistered( char **sign ) {
+	*sign = NULL;
+	return &unregistered->entry;
 }
 
 void *dlsym( void *handler, const char *symbol ) {
@@ -380,8 +419,20 @@ void *dlsym( void *handler, const char *symbol ) {
 		init_kernel_symbols();
 	int len = strlen(symbol);
 	void *loc = memfind(SYMBOLS, SYMBOLS_SIZE, symbol, len + 1);
-	if( loc == NULL )
-		return NULL;
+	if( loc == NULL ) {
+		if( memcmp(symbol,"hlp_",4) != 0 )
+			return NULL;
+		unreg_function *f = malloc(sizeof(unreg_function));
+		f->lib = handler == NULL ? "std" : strdup(handler);
+		f->name = strdup(symbol + 4);
+		f->entry = 0xB850; // PUSH EAX, MOV EAX, ...
+		f->addr = runtime_failure;
+		f->call_asm = 0xD0FF; // CALL EAX
+		f->ret_asm = 0xC358; // POP EAX + RET
+		f->next = unregistered;
+		unregistered = f;
+		return last_unregistered;
+	}
 	int addr = *(int*)((char*)loc + (len + 1));
 	return (void*)addr;
 }
@@ -416,6 +467,22 @@ int hl_date_new( int y, int mo, int d, int h, int m, int s ) {
 	return 0;
 }
 
+static bool hl_define_function( const char *lib, const char *name, vdynamic *d ) {
+	vclosure *c = (vclosure*)d;
+	if( c->hasValue ) kpanic("Cannot define closure from function");
+	unreg_function *f = unregistered;
+	while( f ) {
+		if( strcmp(lib, f->lib) == 0 && strcmp(name,f->name) == 0 ) {
+			f->entry = 0xB890; // NOP + MOV EAX,...
+			f->addr = c->fun;
+			f->call_asm = 0xE0FF; // JMP EAX
+			return true;
+		}
+		f = f->next;
+	}
+	return false;
+}
+
 DEFINE_PRIM(_BOOL, sys_utf8_path, _NO_ARG);
 DEFINE_PRIM(_VOID, sys_print, _BYTES);
 DEFINE_PRIM(_BOOL, sys_is64, _NO_ARG);
@@ -425,3 +492,4 @@ DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
 extern void int32( unsigned char intnum, void *regs );
 _DEFINE_PRIM_WITH_NAME(_VOID, int32, _I32 _STRUCT, int32);
 _DEFINE_PRIM_WITH_NAME(_BYTES, load_kernel_file, _BYTES _REF(_I32), load_kernel_file);
+DEFINE_PRIM(_BOOL, define_function, _BYTES _BYTES _DYN);
