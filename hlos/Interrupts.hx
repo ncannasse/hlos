@@ -73,7 +73,6 @@ class Interrupts {
 	}
 
 	public static function setIRQHandler( irq : IRQ, callb : Void -> Void ) {
-		installHandlers();
 		var prev = irq_callbacks[irq];
 		irq_callbacks[irq] = callb;
 		return prev;
@@ -86,13 +85,7 @@ class Interrupts {
 		Bios.outb(0x40, div >> 8);
 	}
 
-	static var INSTALLED = false;
-
-	public static function installHandlers() {
-		if( INSTALLED ) return;
-		INSTALLED = true;
-		Kernel.installGDT();
-
+	static function init() {
 		var count = 256;
 		idt = hl.CArray.alloc(IdtEntry,count);
 		for( i in 0...256 ) {

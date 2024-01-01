@@ -11,25 +11,33 @@ void libc_panic( const char *file, const char *fun, int line ) {
 }
 
 static char *MALLOC_START_ADDR = (char*)0x01000000;
+static void *(*mem_alloc)( int size, int align ) = NULL;
+static void (*mem_free)( void *ptr ) = NULL;
 
 void *malloc(size_t size) {
-	if( size >= 4 ) {
-		int r = ((int)MALLOC_START_ADDR)&3;
-		if( r != 0 ) MALLOC_START_ADDR += 4 - r;
+	return sys_alloc_align(size, size >= 4 ? 4 : 0);
+}
+
+void free( void *ptr ) {
+	if( mem_free )
+		mem_free(ptr);
+}
+
+void *sys_alloc_align( int size, int align ) {
+	if( mem_alloc )
+		return mem_alloc(size, align);
+	if( align > 0 ) {
+		if( align == 4 ) {
+			int r = ((int)MALLOC_START_ADDR)&3;
+			if( r != 0 ) MALLOC_START_ADDR += 4 - r;
+		} else {
+			int r = ((int)MALLOC_START_ADDR) % align;
+			if( r ) MALLOC_START_ADDR += align - r;
+		}
 	}
 	char *ptr = MALLOC_START_ADDR;
 	MALLOC_START_ADDR += size;
 	return ptr;
-}
-
-void free( void *ptr ) {
-	// TODO
-}
-
-void *sys_alloc_align( int size, int align ) {
-	int delta = ((int)MALLOC_START_ADDR) % align;
-	if( delta ) MALLOC_START_ADDR += align - delta;
-	return malloc(size);
 }
 
 void sys_free_align( void *ptr, int size ) {
@@ -449,16 +457,6 @@ bool hl_sys_is64() {
 	return false;
 }
 
-vbyte *hl_date_to_string( int date, int *len ) {
-	PANIC();
-	return NULL;
-}
-
-int hl_date_new( int y, int mo, int d, int h, int m, int s ) {
-	PANIC();
-	return 0;
-}
-
 static bool hl_define_function( const char *lib, const char *name, vdynamic *d ) {
 	vclosure *c = (vclosure*)d;
 	if( c->hasValue ) kpanic("Cannot define closure from function");
@@ -475,11 +473,19 @@ static bool hl_define_function( const char *lib, const char *name, vdynamic *d )
 	return false;
 }
 
+static void *hl_set_mem_allocator( vclosure *alloc, vclosure *free ) {
+	if( alloc->hasValue || free->hasValue )
+		kpanic("Cannot set closure allocator");
+	mem_alloc = alloc->fun;
+	mem_free = free->fun;
+	return MALLOC_START_ADDR;
+}
+
+DEFINE_PRIM(_BYTES, set_mem_allocator, _FUN(_BYTES,_I32 _I32) _FUN(_VOID,_BYTES));
+
 DEFINE_PRIM(_BOOL, sys_utf8_path, _NO_ARG);
 DEFINE_PRIM(_VOID, sys_print, _BYTES);
 DEFINE_PRIM(_BOOL, sys_is64, _NO_ARG);
-DEFINE_PRIM(_BYTES, date_to_string, _I32 _REF(_I32));
-DEFINE_PRIM(_I32, date_new, _I32 _I32 _I32 _I32 _I32 _I32);
 
 extern void int32( unsigned char intnum, void *regs );
 extern void kprint_regs();

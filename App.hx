@@ -4,8 +4,7 @@ import hlos.*;
 class App {
 
 	static function main() {
-		Keyboard.init();
-		Mouse.init();
+		Kernel.init();
 		Vga.setMode13();
 		Vga.clear(1);
 		for( x in 0...320 )

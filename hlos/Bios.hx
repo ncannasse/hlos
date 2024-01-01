@@ -7,15 +7,19 @@ import hlos.Asm.*;
 	public var si : hl.UI16;
 	public var bp : hl.UI16;
 	public var sp : hl.UI16;
-	public var bx : hl.UI16;
-	public var dx : hl.UI16;
-	public var cx : hl.UI16;
-	public var ax : hl.UI16;
+	var bx : hl.UI16;
+	var dx : hl.UI16;
+	var cx : hl.UI16;
+	var ax : hl.UI16;
 	public var gs : hl.UI16;
 	public var fs : hl.UI16;
 	public var es : hl.UI16;
 	public var ds : hl.UI16;
-	public var eflags : hl.UI16;
+	public var ebx : Int;
+	public var edx : Int;
+	public var ecx : Int;
+	public var eax : Int;
+	public var eflags : hl.UI16; // return only
 	public function new() {
 	}
 }

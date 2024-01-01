@@ -45,7 +45,11 @@ struc regs16_t
     .fs resw 1
     .es resw 1
     .ds resw 1
-    .ef resw 1
+    .ebx resd 1
+    .edx resd 1
+    .ecx resd 1
+    .eax resd 1
+    .eflags resw 1
 endstruc
 
 ;; **NC** -- INT32_BASE was initialy set to 0x7C00 but this messed up with our boot loader
@@ -108,6 +112,10 @@ section .text
         pop  fs                                ; load fs from 16bit stack
         pop  es                                ; load es from 16bit stack
         pop  ds                                ; load ds from 16bit stack
+        pop  ebx
+        pop  edx
+        pop  ecx
+        pop  eax
         sti                                    ; enable interrupts
         db 0xCD                                ; opcode of INT instruction with immediate byte
     ib: db 0x00
@@ -116,6 +124,10 @@ section .text
         mov  ss, sp                            ; set ss so the stack is valid
         mov  sp, INT32_BASE                    ; set correct stack position so we can copy back
         pushf                                  ; save eflags to 16bit stack
+        push eax
+        push ecx
+        push edx
+        push ebx
         push ds                                ; save ds to 16bit stack
         push es                                ; save es to 16bit stack
         push fs                                ; save fs to 16bit stack

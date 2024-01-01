@@ -38,13 +38,13 @@ class Vga {
 
 	public static function setMode13() {
 		var regs = new Bios.Regs16();
-		regs.ax = 0x13;
+		regs.eax = 0x13;
 		Bios.interrupt(0x10, regs);
 	}
 
 	public static function setModeText() {
 		var regs = new Bios.Regs16();
-		regs.ax = 0x2;
+		regs.eax = 0x2;
 		Bios.interrupt(0x10, regs);
 	}
 

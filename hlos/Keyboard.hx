@@ -91,7 +91,6 @@ class Keyboard {
 
 	public static function init() {
 		Interrupts.setIRQHandler(Keyboard, onIRQ);
-		Interrupts.installHandlers();
 	}
 
 }

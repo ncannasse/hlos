@@ -1,9 +1,5 @@
 package hlos;
 
-private typedef ForceImport = {
-	var m : MathDefs;
-}
-
 @:struct class GdtSegment {
 	public var limit : hl.UI16;
 	public var base : hl.UI16;
@@ -43,11 +39,19 @@ class Kernel {
 
 	static var reg = new GdtRegister();
 	static var gdt = new GdtEntry();
-	static var INSTALLED = false;
+	static var INIT = false;
 
-	public static function installGDT() {
-		if( INSTALLED ) return;
-		INSTALLED = true;
+	public static function init() @:privateAccess {
+		if( INIT ) return;
+		Kernel.installGDT();
+		Interrupts.init();
+		Memory.init();
+		Keyboard.init();
+		Mouse.init();
+		MathDefs.init();
+	}
+
+	static function installGDT() {
 		gdt.code.set(0, 0xFFFFF, 0x9A, 0xC);
 		gdt.data.set(0, 0xFFFFF, 0x9A, 0xC);
 		var gaddr = Asm.getValuePtr(gdt);
@@ -90,6 +94,14 @@ class Kernel {
 
 	@:hlNative("std") static function define_function( lib : hl.Bytes, name : hl.Bytes, f : Dynamic ) : Bool {
 		return false;
+	}
+
+	/**
+		Replaces the very simple kernel bump memory allocator with a new alloc/free pair.
+		Returns the current kernel memory allocator position.
+	**/
+	@:hlNative("std","set_mem_allocator") public static function setMemAllocator( alloc : Int -> Int -> hl.Bytes, free : hl.Bytes -> Void ) : hl.Bytes {
+		return null;
 	}
 
 	@:hlNative("std","kprint_regs") public static function printRegs() : Void {
