@@ -59,7 +59,7 @@ The kernel comes with a mini file system that allows to add and change files con
 
 Please note that the kernel is compiled with a fixed amount of reserved data for files. It is defined in `kernel_main.s` and can be increased by recompiling the kernel.
 
-## Assembly progamming
+## Assembly programming
 
 Starting from [this haxe commit](https://github.com/HaxeFoundation/haxe/commit/5ddfcc84f7ee27c9df14f82f27d01ddf51e92df7), you can now emit native assembly directly from Haxe using HLVM.
 
