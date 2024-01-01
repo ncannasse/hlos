@@ -33,9 +33,10 @@ _start:
 	mov $stack_top, %esp
 	call enable_sse2
 	call kmain
-	cli
-1:	hlt
-	jmp 1b
+	sti
+loop:
+	hlt
+	jmp loop
 
 enable_sse2:
 	mov $1, %eax

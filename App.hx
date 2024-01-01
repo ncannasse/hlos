@@ -52,4 +52,16 @@ class App {
 		};
 	}
 
+	static function loop() {
+		// this can be called as a main loop, we will wait for any interrupt
+		// including the timer one for which we can set the frequency
+		var pos = 320 * 200;
+		Interrupts.setTimer(100);
+		while( true ) {
+			Interrupts.wait();
+			pos--;
+			Vga.setPixel(pos%320, Std.int(pos/320), 15);
+		}
+	}
+
 }

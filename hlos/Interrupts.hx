@@ -72,6 +72,12 @@ class Interrupts {
 		}
 	}
 
+	public static function wait() {
+		Asm.emit(Sti);
+		Asm.emit(Hlt);
+		Asm.emit(Cli);
+	}
+
 	public static function setIRQHandler( irq : IRQ, callb : Void -> Void ) {
 		var prev = irq_callbacks[irq];
 		irq_callbacks[irq] = callb;
@@ -118,9 +124,6 @@ class Interrupts {
 
 		if( irq_callbacks[Timer] == null )
 			setIRQHandler(Timer, function() {}); // ignore default timer
-
-		// enable interrupts
-		Asm.emit(Sti);
 	}
 
 	static function setIDT() {

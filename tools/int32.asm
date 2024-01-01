@@ -156,7 +156,6 @@ section .text
         cld                                    ; clear direction flag (so we copy forward)
         rep  movsb                             ; do the actual copy (16bit stack to 32bit stack)
         popa                                   ; restore registers
-        sti                                    ; enable interrupts
         ret                                    ; return to caller
 
     resetpic:                                  ; reset's 8259 master and slave pic vectors

@@ -24,6 +24,7 @@ enum SimpleOp {
 	IRet;
 	Cli;
 	Sti;
+	Hlt;
 	Pusha;
 	Popa;
 }
@@ -43,6 +44,7 @@ class Asm {
 		IRet => 0xCF,
 		Cli => 0xFA,
 		Sti => 0xFB,
+		Hlt => 0xF4,
 		Pusha => 0x60,
 		Popa => 0x61,
 	];
